@@ -128,12 +128,15 @@ fail:
 }
 
 void net_free_animation(struct net_animation* anim) {
+    fprintf(stderr, "net_free_animation() started\n");
 	size_t i;
 	for(i = 0; i < anim->num_frames; i++) {
 		net_frame_free(&anim->frames[i]);
 	}
 	free(anim->frames);
 	free(anim);
+
+    fprintf(stderr, "net_free_animation() completed\n");
 }
 
 int net_animation_to_net_animation(struct net_animation** ret, struct img_animation* src, bool monochrome, unsigned int offset_x, unsigned int offset_y, unsigned int sparse_perc, progress_cb progress_cb) {
@@ -200,11 +203,14 @@ fail:
 }
 
 void net_free(struct net* net) {
+    fprintf(stderr, "net_free() started\n");
 	assert(net->state == NET_STATE_IDLE || net->state == NET_STATE_SHUTDOWN);
 
 	free(net->threads_send);
 	free(net->targs_send);
 	free(net);
+
+    fprintf(stderr, "net_free() completed\n");
 }
 
 static void* net_send_thread(void* data) {
@@ -221,6 +227,7 @@ reconnect:
 	sock = socket(args->remoteaddr->ss_family, SOCK_STREAM, 0);
 	if(sock < 0) {
 		err = sock;
+        fprintf(stderr, "sock < 0: %s\n", strerror(-err));
 		goto fail;
 	}
 
@@ -247,6 +254,8 @@ reconnect:
 				if(errno == ECONNRESET)
 					goto newsocket;
 
+                fprintf(stderr, "write_size < 0: %s (tried to write %zu bytes)\n", strerror(-err), length - offset);
+
 				goto fail;
 			}
 			offset += write_size;
@@ -258,6 +267,7 @@ reconnect:
 	}
 
 fail:
+    fprintf(stderr, "Failed to send frame: %s\n", strerror(-err));
 	shutdown(sock, SHUT_RDWR);
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int));
 	close(sock);
@@ -315,6 +325,7 @@ int net_send_animation(struct net* net, struct sockaddr_storage* dst_address, si
 
 		err = -pthread_create(&net->threads_send[i], NULL, net_send_thread, &net->targs_send[i]);
 		if(err) {
+            fprintf(stderr, "Failed to create send thread: %s\n", strerror(-err));
 			goto fail_thread_create;
 		}
 		net->num_send_threads++;
@@ -325,6 +336,7 @@ int net_send_animation(struct net* net, struct sockaddr_storage* dst_address, si
 
 	err = -pthread_create(&net->thread_animate, NULL, net_animate_thread, &net->targs_animate);
 	if(err) {
+        fprintf(stderr, "Failed to create animation thread: %s\n", strerror(-err));
 		goto fail_thread_create;
 	}
 
@@ -341,10 +353,12 @@ fail_threads_alloc:
 	free(net->threads_send);
 fail:
 	net->state = NET_STATE_IDLE;
+    fprintf(stderr, "Failed to send animation: %s\n", strerror(-err));
 	return err;
 }
 
 void net_shutdown(struct net* net) {
+    fprintf(stderr, "net_shutdown() started, net->num_send_threads=%d\n", net->num_send_threads);
 	unsigned int i;
 
 	assert(net->state == NET_STATE_SENDING);
@@ -358,4 +372,6 @@ void net_shutdown(struct net* net) {
 	}
 
 	net->state = NET_STATE_SHUTDOWN;
+
+    fprintf(stderr, "net_shutdown() completed\n");
 }

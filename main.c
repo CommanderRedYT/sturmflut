@@ -38,6 +38,7 @@ char* filename = FILENAME_DEFAULT;
 bool do_exit = false;
 
 void doshutdown(int signal) {
+    fprintf(stderr, "Caught signal %d\n", signal);
 	do_exit = true;
 }
 
@@ -73,6 +74,7 @@ static void conversion_progress_cb(size_t current, size_t total) {
 
 int main(int argc, char** argv)
 {
+    fprintf(stderr, "Starting main: %s\n", COMPILE_TIME);
 	int opt, num_threads = NUM_THREADS_DEFAULT, err = 0;
 	struct sockaddr_storage* inaddr;
 	size_t inaddr_len;
@@ -210,7 +212,7 @@ int main(int argc, char** argv)
 	printf("Converting animation to pixelflut commands...\n");
 
 	if((err = net_animation_to_net_animation(&net_anim, anim, monochrome, offset_x, offset_y, sparse_perc, conversion_progress_cb))) {
-		fprintf(stderr, "Failed to convert animation to pixelflut commands: %s\n", strerror(-err));
+		fprintf(stderr, "Failed to convimage_free(ert animation to pixelflut commands: %s\n", strerror(-err));
 		goto fail_anim_load;
 	}
 

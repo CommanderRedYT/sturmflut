@@ -25,8 +25,10 @@ fail:
 }
 
 void image_free(struct img_ctx* ctx) {
+    fprintf(stderr, "image_free start\n");
 	MagickWandTerminus();
 	free(ctx);
+    fprintf(stderr, "image_free end\n");
 }
 
 
@@ -125,7 +127,13 @@ int image_load_animation(struct img_animation** ret, char* fname, progress_cb pr
 				img_pixel->color.red = PixelGetRedQuantum(pixel);
 				img_pixel->color.green = PixelGetGreenQuantum(pixel);
 				img_pixel->color.blue = PixelGetBlueQuantum(pixel);
-				img_pixel->color.alpha = PixelGetAlphaQuantum(pixel);
+				// img_pixel->color.alpha = PixelGetAlphaQuantum(pixel);
+
+                if (img_pixel->color.red == 0 && img_pixel->color.green == 0 && img_pixel->color.blue == 0) {
+                    img_pixel->color.alpha = 0;
+                } else {
+                    // img_pixel->color.alpha = 255;
+                }
 
 				img_pixel->x = x;
 				img_pixel->y = y;
